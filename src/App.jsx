@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 
-const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/YOUR_FOLDER_ID";
+const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1PPUr-BeT1e4KrpLdfcfqXB2oFjQiCnqc?usp=drive_link";
 
 const DATASETS = {
   street: {
