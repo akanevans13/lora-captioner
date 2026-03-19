@@ -281,6 +281,30 @@ const assembleCaption = (state, locState) => {
 const isDone = (state, locState) => {
   if (!state || !locState) return false;
   const ds = DATASETS[state._dataset];
+
+  // Has location (minimum requirement)
+  const hasLoc = !!(locState.country || (locState.other_on && locState.country_other));
+  if (!hasLoc) return false;
+
+  // Count how many fields have any value across all sections
+  let filledFields = 0;
+  ds.sections.forEach(s => {
+    const val = state[s.id];
+    const other = state[`${s.id}_other_on`] && state[`${s.id}_other`]?.trim();
+    if (other) filledFields++;
+    else if (s.multi && val?.length > 0) filledFields++;
+    else if (!s.multi && !!val) filledFields++;
+  });
+  if (state.notes?.trim()) filledFields++;
+
+  // Count as captioned if location + at least 1 other field filled
+  return filledFields >= 1;
+};
+
+// Full completion check — used for ZIP quality indicator
+const isFullyDone = (state, locState) => {
+  if (!state || !locState) return false;
+  const ds = DATASETS[state._dataset];
   const hasLoc = !!(locState.country || (locState.other_on && locState.country_other));
   const sectsDone = ds.sections.filter(s => s.required).every(s => {
     const val = state[s.id];
@@ -720,6 +744,13 @@ const CSS = `
     cursor: pointer; transition: all .15s;
   }
   .done-back-btn:hover { border-color: #504840; color: #e8dfd4; }
+  .watermark-footer {
+    text-align: center; padding: 5px 0; font-size: 9px; color: #252320;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: .06em;
+    border-top: 1px solid #131110; background: #0a0909; flex-shrink: 0;
+    user-select: none; pointer-events: none;
+  }
+
 `;
 
 /* ─────────────────────────────────────────
@@ -955,7 +986,8 @@ function DownloadModal({ images, caps, locStates, photographerName, onClose, onD
         <div className="modal-stats">
           <div className="modal-stat"><span className="modal-stat-label">Photographer</span><span className="modal-stat-value">{photographerName}</span></div>
           <div className="modal-stat"><span className="modal-stat-label">Images</span><span className="modal-stat-value">{images.length}</span></div>
-          <div className="modal-stat"><span className="modal-stat-label">Captioned</span><span className="modal-stat-value" style={{ color: "#5aaa7a" }}>{doneCount} / {images.length}</span></div>
+          <div className="modal-stat"><span className="modal-stat-label">Partially captioned</span><span className="modal-stat-value" style={{ color: "#e8a84c" }}>{doneCount} / {images.length}</span></div>
+          <div className="modal-stat"><span className="modal-stat-label">Fully captioned</span><span className="modal-stat-value" style={{ color: "#5aaa7a" }}>{images.filter((_, i) => isFullyDone(caps[i], locStates[i])).length} / {images.length}</span></div>
         </div>
         <div className="steps">
           <div className="step">
@@ -1138,6 +1170,7 @@ export default function App() {
             <div className="onboard-privacy-text">Your images never leave your device until you download the ZIP and upload it yourself to Google Drive. Nothing is uploaded automatically.</div>
           </div>
           <button className="onboard-btn" disabled={!photographerName.trim()} onClick={() => setScreen("upload")}>Continue →</button>
+          <div style={{ textAlign: 'center', fontSize: '9px', color: '#252320', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '.06em', userSelect: 'none' }}>Zazi Captioner © Evans Akanyijuka</div>
         </div>
       </div>
     </>
@@ -1176,6 +1209,7 @@ export default function App() {
             <button className="upload-btn upload-btn-folder" onClick={e => { e.stopPropagation(); folderRef.current.click(); }}>📁 Upload a folder</button>
           </div>
         </div>
+        <div className="watermark-footer">Zazi Captioner © Evans Akanyijuka · Afropean Intelligence Program</div>
         {showEditName && (
           <EditNameModal current={photographerName}
             onSave={n => { setPhotographerName(n); setShowEditName(false); }}
@@ -1304,7 +1338,11 @@ export default function App() {
                 onClick={() => setIdx(i)} title={img.name}>
                 <img src={img.url} alt="" />
               </button>
-              {isDone(caps[i], locStates[i]) && <span className="done-dot">✓</span>}
+              {isDone(caps[i], locStates[i]) && (
+                <span className="done-dot" style={{ background: isFullyDone(caps[i], locStates[i]) ? '#5aaa7a' : '#e8a84c' }}>
+                  {isFullyDone(caps[i], locStates[i]) ? '✓' : '·'}
+                </span>
+              )}
               <button className="thumb-delete" onClick={() => setDeleteTarget(i)}>✕</button>
             </div>
           ))}
@@ -1336,6 +1374,7 @@ export default function App() {
           </div>
         )}
 
+        <div className="watermark-footer">Zazi Captioner © Evans Akanyijuka · Afropean Intelligence Program</div>
         {showEditName && (
           <EditNameModal current={photographerName}
             onSave={n => { setPhotographerName(n); setShowEditName(false); }}
