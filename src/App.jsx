@@ -3,6 +3,12 @@ import { useState, useCallback, useRef } from "react";
 const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1PPUr-BeT1e4KrpLdfcfqXB2oFjQiCnqc?usp=drive_link";
 
 /* ─────────────────────────────────────────
+   ACCESS CODE — Change this before deploying
+   Share this code privately with photographers
+──────────────────────────────────────── */
+const ACCESS_CODE = "ZAZI2025";
+
+/* ─────────────────────────────────────────
    LOCATION DATA — Country → City → Region
 ──────────────────────────────────────── */
 const LOCATIONS = {
@@ -1046,7 +1052,9 @@ function EditNameModal({ current, onSave, onClose }) {
    MAIN APP
 ──────────────────────────────────────── */
 export default function App() {
-  const [screen, setScreen] = useState("onboard");
+  const [screen, setScreen] = useState("pin");
+  const [pinValue, setPinValue] = useState("");
+  const [pinError, setPinError] = useState(false);
   const [photographerName, setPhotographerName] = useState("");
   const [photographerNote, setPhotographerNote] = useState("");
   const [images, setImages] = useState([]);
@@ -1144,6 +1152,98 @@ export default function App() {
 
   const doneCount = images.filter((_, i) => isDone(caps[i], locStates[i])).length;
   const pct = images.length ? (doneCount / images.length) * 100 : 0;
+
+
+  /* ── PIN screen ── */
+  .pin-screen {
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #0f0e0e; font-family: 'Syne', sans-serif;
+  }
+  .pin-card {
+    background: #131110; border: 1px solid #1e1c1a; border-radius: 14px;
+    padding: 40px 36px; width: 360px; display: flex; flex-direction: column;
+    gap: 20px; align-items: center; text-align: center;
+  }
+  .pin-logo { font-size: 22px; font-weight: 800; color: #e8dfd4; letter-spacing: -.02em; }
+  .pin-logo span { color: #e8a84c; }
+  .pin-logo-sub { font-size: 11px; color: #403830; margin-top: -14px; letter-spacing: .08em; text-transform: uppercase; }
+  .pin-sub { font-size: 13px; color: #504840; line-height: 1.7; }
+  .pin-input-wrap { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .pin-input {
+    background: #0f0e0e; border: 1px solid #1e1c1a; color: #e8dfd4;
+    border-radius: 7px; font-family: 'JetBrains Mono', monospace; font-size: 18px;
+    padding: 12px 13px; outline: none; transition: border-color .15s; width: 100%;
+    text-align: center; letter-spacing: .2em; text-transform: uppercase;
+  }
+  .pin-input:focus { border-color: #e8a84c; }
+  .pin-input.error { border-color: #e07070; animation: shake .3s ease; }
+  .pin-error { font-size: 11px; color: #e07070; }
+  .pin-btn {
+    padding: 12px; background: #e8a84c; border: none; color: #111;
+    border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 14px;
+    font-weight: 800; cursor: pointer; transition: background .15s; width: 100%;
+  }
+  .pin-btn:hover:not(:disabled) { background: #f0bc6a; }
+  .pin-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .pin-footer { font-size: 9px; color: '#252320'; font-family: 'JetBrains Mono', monospace; letter-spacing: .06em; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  /* ── PIN screen ── */
+  if (screen === "pin") return (
+    <>
+      <style>{CSS}</style>
+      <div className="pin-screen">
+        <div className="pin-card">
+          <div className="pin-logo">Zazi <span>Captioner</span></div>
+          <div className="pin-logo-sub">Know yourself · Know your image</div>
+          <div className="pin-sub">
+            This tool is restricted to invited photographers only.
+            Enter the access code you received to continue.
+          </div>
+          <div className="pin-input-wrap">
+            <input
+              className={`pin-input${pinError ? " error" : ""}`}
+              placeholder="Access code"
+              value={pinValue}
+              maxLength={20}
+              onChange={e => { setPinValue(e.target.value.toUpperCase()); setPinError(false); }}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  if (pinValue.trim() === ACCESS_CODE) {
+                    setScreen("onboard");
+                  } else {
+                    setPinError(true);
+                    setPinValue("");
+                  }
+                }
+              }}
+              autoFocus
+            />
+            {pinError && <div className="pin-error">Incorrect code — please check with the project coordinator</div>}
+          </div>
+          <button className="pin-btn"
+            disabled={!pinValue.trim()}
+            onClick={() => {
+              if (pinValue.trim() === ACCESS_CODE) {
+                setScreen("onboard");
+              } else {
+                setPinError(true);
+                setPinValue("");
+              }
+            }}>
+            Enter →
+          </button>
+          <div className="pin-footer">Zazi Captioner © Evans Akanyijuka</div>
+        </div>
+      </div>
+    </>
+  );
 
   /* ── Onboarding ── */
   if (screen === "onboard") return (
