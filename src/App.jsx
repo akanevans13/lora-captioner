@@ -732,7 +732,7 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
   const regions   = locState.country && locState.city && LOCATIONS[locState.country]?.cities[locState.city]
     ? LOCATIONS[locState.country].cities[locState.city] : [];
 
-  const upd = (field, val) => setLocState(p => ({ ...p, [field]: val }));
+  const upd = (fields) => setLocState(p => ({ ...p, ...fields }));
 
   const hasLoc = !!(locState.country || (locState.other_on && locState.country_other));
 
@@ -783,7 +783,7 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
           <div className="loc-row">
             {/* Country */}
             <select className="loc-select" value={locState.country}
-              onChange={e => upd("country", e.target.value) || upd("city", "") || upd("region", "")}>
+              onChange={e => upd({ country: e.target.value, city: "", region: "" })}>
               <option value="">Country…</option>
               {countries.map(c => (
                 <option key={c} value={c}>{LOCATIONS[c].flag} {c}</option>
@@ -793,7 +793,7 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
             {/* City */}
             <select className="loc-select" value={locState.city}
               disabled={!locState.country}
-              onChange={e => { upd("city", e.target.value); upd("region", ""); }}>
+              onChange={e => upd({ city: e.target.value, region: "" })}>
               <option value="">City…</option>
               {cities.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -802,7 +802,7 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
           {/* Region / Neighbourhood */}
           {locState.city && regions.length > 0 && (
             <select className="loc-select" value={locState.region}
-              onChange={e => upd("region", e.target.value)}>
+              onChange={e => upd({ region: e.target.value })}>
               <option value="">Area / Neighbourhood (optional)…</option>
               {regions.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -812,11 +812,11 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
         /* Other — free text for all three levels */
         <div className="loc-row" style={{ flexDirection: "column", gap: 6 }}>
           <input className="loc-other-input" placeholder="Country…"
-            value={locState.country_other} onChange={e => upd("country_other", e.target.value)} />
+            value={locState.country_other} onChange={e => upd({ country_other: e.target.value })} />
           <input className="loc-other-input" placeholder="City…"
-            value={locState.city_other} onChange={e => upd("city_other", e.target.value)} />
+            value={locState.city_other} onChange={e => upd({ city_other: e.target.value })} />
           <input className="loc-other-input" placeholder="Area / Neighbourhood (optional)…"
-            value={locState.region_other} onChange={e => upd("region_other", e.target.value)} />
+            value={locState.region_other} onChange={e => upd({ region_other: e.target.value })} />
         </div>
       )}
 
@@ -824,7 +824,7 @@ function LocationSection({ locState, setLocState, locLocked, setLocLocked, accen
       <div className="loc-other-row">
         <button
           className={`loc-other-btn${locState.other_on ? " on" : ""}`}
-          onClick={() => upd("other_on", !locState.other_on)}
+          onClick={() => upd({ other_on: !locState.other_on })}
         >
           {locState.other_on ? "← Use dropdown" : "+ Not in the list? Type it"}
         </button>
