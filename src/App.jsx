@@ -2,15 +2,149 @@ import { useState, useCallback, useRef } from "react";
 
 const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1PPUr-BeT1e4KrpLdfcfqXB2oFjQiCnqc?usp=drive_link";
 
+/* ─────────────────────────────────────────
+   LOCATION DATA — Country → City → Region
+──────────────────────────────────────── */
+const LOCATIONS = {
+  "South Africa": {
+    flag: "🇿🇦",
+    cities: {
+      "Johannesburg": ["CBD","Soweto","Sandton","Maboneng Precinct","Braamfontein","Hillbrow","Alexandra Township","Yeoville","Newtown","Melville","Fordsburg","Diepsloot","Rosettenville","Orange Farm","Eldorado Park"],
+      "Cape Town":    ["City Bowl","Woodstock","Khayelitsha","Mitchells Plain","Gugulethu","Observatory","Bo-Kaap","Langa","Athlone","Sea Point"],
+      "Durban":       ["CBD","Umlazi","Chatsworth","Phoenix","Pinetown","Warwick","KwaMashu","Bluff"],
+      "Pretoria":     ["CBD","Soshanguve","Mamelodi","Hatfield","Atteridgeville","Centurion"],
+      "Port Elizabeth":["CBD","New Brighton","Motherwell","Gelvandale","Walmer"],
+    }
+  },
+  "Nigeria": {
+    flag: "🇳🇬",
+    cities: {
+      "Lagos":  ["Victoria Island","Surulere","Mushin","Oshodi","Ikeja","Lekki","Yaba","Agege","Apapa","Lagos Island"],
+      "Abuja":  ["Garki","Wuse","Maitama","Gwarinpa","Asokoro","Kubwa"],
+      "Kano":   ["Fagge","Nassarawa","Gwale","Dala","Tarauni"],
+      "Ibadan": ["Bodija","Dugbe","Ring Road","Agodi","Mokola"],
+    }
+  },
+  "Kenya": {
+    flag: "🇰🇪",
+    cities: {
+      "Nairobi":  ["CBD","Kibera","Westlands","Eastleigh","Karen","Mathare","Kawangware","Kayole","Langata"],
+      "Mombasa":  ["Old Town","Nyali","Likoni","Kisauni","Bamburi"],
+      "Kisumu":   ["CBD","Kondele","Manyatta","Migosi"],
+    }
+  },
+  "Ghana": {
+    flag: "🇬🇭",
+    cities: {
+      "Accra":  ["Jamestown","Osu","Labadi","Nima","Tema","Adabraka","Kaneshie","Madina"],
+      "Kumasi": ["Kejetia","Adum","Asafo","Suame","Manhyia"],
+    }
+  },
+  "Ethiopia": {
+    flag: "🇪🇹",
+    cities: {
+      "Addis Ababa": ["Piassa","Merkato","Bole","Kazanchis","Kirkos","Yeka","Arada"],
+      "Dire Dawa":   ["Kezira","Legehare","Ganda Kore"],
+    }
+  },
+  "Egypt": {
+    flag: "🇪🇬",
+    cities: {
+      "Cairo":       ["Downtown","Zamalek","Heliopolis","Khan el-Khalili","Shubra","Imbaba","Maadi","Nasr City"],
+      "Alexandria":  ["Montazah","Smouha","Miami","Sporting","El Raml"],
+    }
+  },
+  "Senegal": {
+    flag: "🇸🇳",
+    cities: {
+      "Dakar": ["Plateau","Medina","Yoff","Ouakam","Parcelles Assainies","Pikine","Guédiawaye"],
+    }
+  },
+  "Tanzania": {
+    flag: "🇹🇿",
+    cities: {
+      "Dar es Salaam": ["CBD","Kariakoo","Kinondoni","Ilala","Temeke","Kigamboni"],
+      "Zanzibar":      ["Stone Town","Nungwi","Paje"],
+    }
+  },
+  "Uganda": {
+    flag: "🇺🇬",
+    cities: {
+      "Kampala": ["CBD","Kabalagala","Wandegeya","Makindye","Kawempe","Nakawa","Rubaga"],
+    }
+  },
+  "Zimbabwe": {
+    flag: "🇿🇼",
+    cities: {
+      "Harare":    ["CBD","Mbare","Avondale","Highfield","Glen View","Kuwadzana"],
+      "Bulawayo":  ["CBD","Makokoba","Nkulumane","Pumula"],
+    }
+  },
+  "Morocco": {
+    flag: "🇲🇦",
+    cities: {
+      "Casablanca": ["Derb Sultan","Hay Mohammadi","Ain Chock","Sidi Bernoussi","Maarif","Ain Sebaa"],
+      "Marrakech":  ["Medina","Gueliz","Mellah","Bab Doukkala","Hivernage"],
+      "Rabat":      ["Medina","Agdal","Hassan","Akkari","Youssoufia"],
+    }
+  },
+  "Cameroon": {
+    flag: "🇨🇲",
+    cities: {
+      "Douala":  ["Akwa","Bali","Bonaberi","Deido","New Bell","Ndokotti"],
+      "Yaoundé": ["Bastos","Mvan","Mvog-Mbi","Essos","Biyem-Assi"],
+    }
+  },
+  "Côte d'Ivoire": {
+    flag: "🇨🇮",
+    cities: {
+      "Abidjan": ["Plateau","Treichville","Adjamé","Yopougon","Cocody","Abobo","Marcory"],
+    }
+  },
+  "DR Congo": {
+    flag: "🇨🇩",
+    cities: {
+      "Kinshasa": ["Gombe","Lingwala","Kintambo","Kalamu","Lemba","Ndjili","Masina","Barumbu"],
+      "Lubumbashi": ["Kamalondo","Kampemba","Katuba","Kenya","Annexe"],
+    }
+  },
+  "Mozambique": {
+    flag: "🇲🇿",
+    cities: {
+      "Maputo":  ["Baixa","Polana","Maxaquene","Urbanização","Malhangalene","Chamanculo"],
+      "Beira":   ["Macuti","Munhava","Chipangara","Goto"],
+    }
+  },
+  "Angola": {
+    flag: "🇦🇴",
+    cities: {
+      "Luanda":   ["Ingombota","Maianga","Rangel","Cazenga","Viana","Cacuaco","Kilamba Kiaxi"],
+      "Huambo":   ["Huambo City","Catchiungo","Ecunha"],
+    }
+  },
+  "Rwanda": {
+    flag: "🇷🇼",
+    cities: {
+      "Kigali": ["Nyarugenge","Gasabo","Kicukiro","Kimironko","Remera","Gikondo"],
+    }
+  },
+  "Zambia": {
+    flag: "🇿🇲",
+    cities: {
+      "Lusaka":     ["CBD","Kalingalinga","Chibolya","Garden","Mtendere","Chelstone","Kanyama"],
+      "Livingstone": ["Dambwa","Maramba","Libuyu","Linda"],
+    }
+  },
+};
+
+/* ─────────────────────────────────────────
+   DATASETS
+──────────────────────────────────────── */
 const DATASETS = {
   street: {
     label: "Street Photography", trigger: "streetlora",
     color: "#e8a84c", icon: "🏙",
     sections: [
-      { id: "location", label: "Location", required: true,
-        chips: ["Johannesburg CBD","Maboneng Precinct","Soweto","Sandton",
-                "Alexandra Township","Newtown","Braamfontein","Hillbrow",
-                "Yeoville","Melville","Fordsburg","Diepsloot"] },
       { id: "elements", label: "Street Elements", multi: true,
         chips: ["minibus taxi rank","street vendors","spaza shop","street art / murals",
                 "hand-painted signage","informal traders","pedestrian crowds",
@@ -27,9 +161,6 @@ const DATASETS = {
     label: "Architecture", trigger: "archlora",
     color: "#7eb8d4", icon: "🏛",
     sections: [
-      { id: "location", label: "Location / City", required: true,
-        chips: ["Johannesburg","Cape Town","Durban","Pretoria","Soweto",
-                "Sandton","Lagos","Nairobi","Cairo","Accra"] },
       { id: "style", label: "Architectural Style", required: true, multi: true,
         chips: ["brutalist concrete","colonial","modernist","art deco","vernacular",
                 "industrial warehouse","RDP / social housing","corrugated iron",
@@ -73,9 +204,6 @@ const DATASETS = {
     label: "Markets & Informal Economy", trigger: "marketlora",
     color: "#7ed49a", icon: "🛒",
     sections: [
-      { id: "location", label: "Location", required: true,
-        chips: ["Johannesburg CBD","Warwick Market Durban","Cape Town CBD","Soweto",
-                "Alexandra","Pretoria","Rural roadside","Township market"] },
       { id: "goods", label: "Goods / Trade", multi: true,
         chips: ["fresh produce","clothing and fabrics","street food","electronics",
                 "traditional medicine / muthi","hardware","crafts and art","second-hand goods"] },
@@ -91,13 +219,10 @@ const DATASETS = {
     label: "Landscape & Environment", trigger: "landscapelora",
     color: "#a8c47e", icon: "🌍",
     sections: [
-      { id: "region", label: "Region / Biome", required: true,
-        chips: ["Highveld grassland","Bushveld / savanna","Karoo semi-desert",
-                "Drakensberg mountains","Coastal / Indian Ocean","Township periphery",
-                "Peri-urban sprawl","Mine dumps Joburg"] },
       { id: "terrain", label: "Terrain Features", multi: true,
         chips: ["flat grassland","rocky outcrop","mine dump","informal settlement edge",
-                "industrial zone","wetland","road / highway","open sky dominant"] },
+                "industrial zone","wetland","road / highway","open sky dominant",
+                "coastal","mountain","desert","forest / bush"] },
       { id: "time", label: "Time of Day", required: true,
         chips: ["sunrise / dawn","morning","midday","afternoon","golden hour","sunset","blue hour","night"] },
       { id: "weather", label: "Weather / Atmosphere",
@@ -108,6 +233,15 @@ const DATASETS = {
     ]
   }
 };
+
+/* ─────────────────────────────────────────
+   HELPERS
+──────────────────────────────────────── */
+const emptyLocState = () => ({
+  country: "", city: "", region: "",
+  country_other: "", city_other: "", region_other: "",
+  other_on: false
+});
 
 const emptyState = (dsKey) => {
   const ds = DATASETS[dsKey];
@@ -121,10 +255,19 @@ const emptyState = (dsKey) => {
   return obj;
 };
 
-const assembleCaption = (state) => {
+const assembleCaption = (state, locState) => {
   if (!state) return "";
   const ds = DATASETS[state._dataset];
   const parts = [ds.trigger];
+
+  // Location parts
+  const country = locState.other_on && locState.country_other ? locState.country_other : locState.country;
+  const city    = locState.other_on && locState.city_other    ? locState.city_other    : locState.city;
+  const region  = locState.other_on && locState.region_other  ? locState.region_other  : locState.region;
+  if (country) parts.push(country);
+  if (city && city !== country) parts.push(city);
+  if (region) parts.push(region);
+
   ds.sections.forEach(s => {
     if (s.multi) parts.push(...(state[s.id] || []));
     else if (state[s.id]) parts.push(state[s.id]);
@@ -135,21 +278,25 @@ const assembleCaption = (state) => {
   return parts.filter(Boolean).join(", ");
 };
 
-const isDone = (state) => {
-  if (!state) return false;
+const isDone = (state, locState) => {
+  if (!state || !locState) return false;
   const ds = DATASETS[state._dataset];
-  return ds.sections.filter(s => s.required).every(s => {
+  const hasLoc = !!(locState.country || (locState.other_on && locState.country_other));
+  const sectsDone = ds.sections.filter(s => s.required).every(s => {
     const val = state[s.id];
     const other = state[`${s.id}_other_on`] && state[`${s.id}_other`]?.trim();
     return other || (s.multi ? val?.length > 0 : !!val);
   });
+  return hasLoc && sectsDone;
 };
 
+/* ─────────────────────────────────────────
+   CSS
+──────────────────────────────────────── */
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── Onboarding ── */
   .onboard {
     height: 100vh; display: flex; align-items: center; justify-content: center;
     background: #0f0e0e; font-family: 'Syne', sans-serif;
@@ -184,7 +331,6 @@ const CSS = `
   .onboard-btn:hover:not(:disabled) { background: #f0bc6a; }
   .onboard-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ── Back button ── */
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 6px 12px; background: transparent; border: 1px solid #1e1c1a;
@@ -193,7 +339,6 @@ const CSS = `
   }
   .back-btn:hover { border-color: #504840; color: #e8dfd4; }
 
-  /* ── Edit name modal ── */
   .edit-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.88);
     display: flex; align-items: center; justify-content: center;
@@ -227,7 +372,6 @@ const CSS = `
   .edit-save:hover:not(:disabled) { background: #f0bc6a; }
   .edit-save:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ── Upload screen ── */
   .upload-screen {
     height: 100vh; display: flex; flex-direction: column;
     background: #0f0e0e; font-family: 'Syne', sans-serif; transition: background .2s;
@@ -245,10 +389,7 @@ const CSS = `
     font-size: 10px; cursor: pointer; transition: all .15s;
   }
   .edit-name-btn:hover { border-color: #504840; color: #e8dfd4; }
-  .upload-body {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 12px;
-  }
+  .upload-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
   .upload-drop-zone {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     border: 2px dashed #1e1c1a; border-radius: 16px; padding: 48px 60px;
@@ -260,20 +401,13 @@ const CSS = `
   .upload-sub { font-size: 12px; color: #403830; }
   .upload-divider { font-size: 11px; color: #2c2820; }
   .upload-btns { display: flex; gap: 10px; }
-  .upload-btn {
-    padding: 8px 18px; border-radius: 7px; font-family: 'Syne', sans-serif;
-    font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s;
-  }
+  .upload-btn { padding: 8px 18px; border-radius: 7px; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
   .upload-btn-files { background: #e8a84c; border: none; color: #111; }
   .upload-btn-files:hover { background: #f0bc6a; }
   .upload-btn-folder { background: transparent; border: 1px solid #2a2825; color: #504840; }
   .upload-btn-folder:hover { border-color: #e8a84c; color: #e8a84c; }
 
-  /* ── App shell ── */
-  .app {
-    font-family: 'Syne', sans-serif; background: #0f0e0e;
-    color: #e8dfd4; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
-  }
+  .app { font-family: 'Syne', sans-serif; background: #0f0e0e; color: #e8dfd4; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 9px 16px; border-bottom: 1px solid #1a1917;
@@ -289,8 +423,7 @@ const CSS = `
   .photographer-tag {
     display: flex; align-items: center; gap: 5px;
     font-size: 11px; color: #504840; padding: 4px 10px;
-    border: 1px solid #1e1c1a; border-radius: 20px; white-space: nowrap;
-    cursor: pointer; transition: all .15s;
+    border: 1px solid #1e1c1a; border-radius: 20px; white-space: nowrap; cursor: pointer; transition: all .15s;
   }
   .photographer-tag:hover { border-color: #504840; color: #e8dfd4; }
   .photographer-tag span { color: #e8a84c; font-weight: 700; }
@@ -357,6 +490,60 @@ const CSS = `
     background: rgba(90,170,122,.08); border: 1px solid rgba(90,170,122,.2);
     border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
   }
+
+  /* ── Location section ── */
+  .loc-section { display: flex; flex-direction: column; gap: 8px; }
+  .loc-header { display: flex; align-items: center; justify-content: space-between; }
+  .loc-lock {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: #504840; cursor: pointer; user-select: none;
+    padding: 3px 8px; border: 1px solid #1e1c1a; border-radius: 20px;
+    transition: all .15s;
+  }
+  .loc-lock:hover { border-color: #504840; color: #e8dfd4; }
+  .loc-lock.locked { border-color: #e8a84c55; color: #e8a84c; background: #e8a84c10; }
+  .loc-lock-dot { width: 7px; height: 7px; border-radius: 50%; background: #2c2820; transition: background .15s; }
+  .loc-lock.locked .loc-lock-dot { background: #e8a84c; }
+  .loc-row { display: flex; gap: 7px; }
+  .loc-select {
+    flex: 1; background: #131110; border: 1px solid #1e1c1a; color: #e8dfd4;
+    border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 11px;
+    padding: 7px 10px; outline: none; transition: border-color .15s; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23504840'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .loc-select:focus { border-color: #e8a84c; }
+  .loc-select:disabled { opacity: .35; cursor: not-allowed; }
+  .loc-select option { background: #1a1917; }
+  .loc-other-row { display: flex; gap: 7px; margin-top: 2px; }
+  .loc-other-btn {
+    padding: 5px 10px; background: #131110; border: 1px dashed #1e1c1a;
+    color: #2c2820; border-radius: 6px; font-family: 'Syne', sans-serif;
+    font-size: 10px; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .loc-other-btn:hover { border-color: #504840; color: #e8dfd4; }
+  .loc-other-btn.on { border-style: solid; border-color: #e8a84c55; color: #e8a84c; }
+  .loc-other-input {
+    flex: 1; background: #131110; border: 1px solid #1e1c1a; color: #e8dfd4;
+    border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 11px;
+    padding: 5px 9px; outline: none; transition: border-color .15s; min-width: 0;
+  }
+  .loc-other-input:focus { border-color: #e8a84c; }
+  .loc-locked-display {
+    background: #0f0e0e; border: 1px solid #e8a84c22; border-radius: 6px;
+    padding: 8px 12px; font-size: 11px; color: #e8a84c;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .loc-locked-display-text { display: flex; align-items: center; gap: 6px; }
+  .loc-unlock-btn {
+    font-size: 10px; color: #504840; background: transparent; border: none;
+    cursor: pointer; padding: 0; font-family: 'Syne', sans-serif; transition: color .15s;
+    white-space: nowrap;
+  }
+  .loc-unlock-btn:hover { color: #e8dfd4; }
+
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
   .chip {
     padding: 4px 9px; background: #131110; border: 1px solid #1e1c1a;
@@ -391,7 +578,6 @@ const CSS = `
   .preview-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #605040; line-height: 1.8; word-break: break-all; }
   .preview-text .trigger { font-weight: 600; }
 
-  /* ── Thumb strip ── */
   .thumb-strip {
     display: flex; gap: 4px; padding: 6px 10px;
     background: #080707; border-top: 1px solid #1a1917;
@@ -410,8 +596,7 @@ const CSS = `
   .done-dot {
     position: absolute; bottom: 2px; right: 2px; width: 13px; height: 13px;
     background: #5aaa7a; color: white; border-radius: 50%; font-size: 7px;
-    display: flex; align-items: center; justify-content: center; font-weight: 900;
-    pointer-events: none;
+    display: flex; align-items: center; justify-content: center; font-weight: 900; pointer-events: none;
   }
   .thumb-delete {
     position: absolute; top: -5px; right: -5px;
@@ -429,7 +614,6 @@ const CSS = `
   }
   .thumb-add:hover { border-color: #e8a84c; color: #e8a84c; }
 
-  /* ── Modals ── */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.88);
     display: flex; align-items: center; justify-content: center;
@@ -475,15 +659,13 @@ const CSS = `
   .modal-dl-btn:hover:not(:disabled) { background: #f0bc6a; }
   .modal-dl-btn:disabled { opacity: .4; cursor: not-allowed; }
   .drive-btn {
-    padding: 10px; background: transparent;
-    border: 1px solid #1e6aff44; color: #6aa3ff;
+    padding: 10px; background: transparent; border: 1px solid #1e6aff44; color: #6aa3ff;
     border-radius: 7px; font-family: 'Syne', sans-serif; font-size: 12px;
     font-weight: 700; cursor: pointer; transition: all .15s;
     display: flex; align-items: center; justify-content: center; gap: 7px;
   }
   .drive-btn:hover { background: #1e6aff11; border-color: #6aa3ff; }
 
-  /* ── Delete confirm ── */
   .delete-confirm-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.88);
     display: flex; align-items: center; justify-content: center;
@@ -510,7 +692,6 @@ const CSS = `
   }
   .delete-yes:hover { background: rgba(224,112,112,.25); }
 
-  /* ── Done screen ── */
   .done-screen {
     height: 100vh; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -528,21 +709,133 @@ const CSS = `
   .done-reminder-text { font-size: 12px; color: #504840; line-height: 1.7; }
   .done-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .done-drive-btn {
-    padding: 12px 24px; background: transparent;
-    border: 1px solid #1e6aff55; color: #6aa3ff;
+    padding: 12px 24px; background: transparent; border: 1px solid #1e6aff55; color: #6aa3ff;
     border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px;
     font-weight: 700; cursor: pointer; transition: all .15s;
   }
   .done-drive-btn:hover { background: #1e6aff11; border-color: #6aa3ff; }
   .done-back-btn {
-    padding: 12px 24px; background: transparent;
-    border: 1px solid #1e1c1a; color: #504840;
+    padding: 12px 24px; background: transparent; border: 1px solid #1e1c1a; color: #504840;
     border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px;
     cursor: pointer; transition: all .15s;
   }
   .done-back-btn:hover { border-color: #504840; color: #e8dfd4; }
 `;
 
+/* ─────────────────────────────────────────
+   LOCATION SECTION COMPONENT
+──────────────────────────────────────── */
+function LocationSection({ locState, setLocState, locLocked, setLocLocked, accent }) {
+  const countries = Object.keys(LOCATIONS);
+  const cities    = locState.country && LOCATIONS[locState.country]
+    ? Object.keys(LOCATIONS[locState.country].cities) : [];
+  const regions   = locState.country && locState.city && LOCATIONS[locState.country]?.cities[locState.city]
+    ? LOCATIONS[locState.country].cities[locState.city] : [];
+
+  const upd = (field, val) => setLocState(p => ({ ...p, [field]: val }));
+
+  const hasLoc = !!(locState.country || (locState.other_on && locState.country_other));
+
+  // When locked show a summary badge instead of the full dropdowns
+  if (locLocked && hasLoc) {
+    const display = [
+      locState.other_on ? locState.country_other : locState.country,
+      locState.other_on ? locState.city_other    : locState.city,
+      locState.other_on ? locState.region_other  : locState.region,
+    ].filter(Boolean).join(" · ");
+    return (
+      <div className="loc-section">
+        <div className="loc-header">
+          <label className="label">
+            Location <span className="req" style={{ color: accent }}>*</span>
+            <span className="done-badge">✓ locked</span>
+          </label>
+        </div>
+        <div className="loc-locked-display">
+          <div className="loc-locked-display-text">📍 {display}</div>
+          <button className="loc-unlock-btn" onClick={() => setLocLocked(false)}>change</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="loc-section">
+      <div className="loc-header">
+        <label className="label">
+          Location <span className="req" style={{ color: accent }}>*</span>
+          {hasLoc && <span className="done-badge">✓</span>}
+        </label>
+        {hasLoc && (
+          <div
+            className={`loc-lock${locLocked ? " locked" : ""}`}
+            onClick={() => setLocLocked(!locLocked)}
+            title="Lock location across all images"
+          >
+            <div className="loc-lock-dot" />
+            {locLocked ? "Locked" : "Lock for all images"}
+          </div>
+        )}
+      </div>
+
+      {!locState.other_on ? (
+        <>
+          <div className="loc-row">
+            {/* Country */}
+            <select className="loc-select" value={locState.country}
+              onChange={e => upd("country", e.target.value) || upd("city", "") || upd("region", "")}>
+              <option value="">Country…</option>
+              {countries.map(c => (
+                <option key={c} value={c}>{LOCATIONS[c].flag} {c}</option>
+              ))}
+            </select>
+
+            {/* City */}
+            <select className="loc-select" value={locState.city}
+              disabled={!locState.country}
+              onChange={e => { upd("city", e.target.value); upd("region", ""); }}>
+              <option value="">City…</option>
+              {cities.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Region / Neighbourhood */}
+          {locState.city && regions.length > 0 && (
+            <select className="loc-select" value={locState.region}
+              onChange={e => upd("region", e.target.value)}>
+              <option value="">Area / Neighbourhood (optional)…</option>
+              {regions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          )}
+        </>
+      ) : (
+        /* Other — free text for all three levels */
+        <div className="loc-row" style={{ flexDirection: "column", gap: 6 }}>
+          <input className="loc-other-input" placeholder="Country…"
+            value={locState.country_other} onChange={e => upd("country_other", e.target.value)} />
+          <input className="loc-other-input" placeholder="City…"
+            value={locState.city_other} onChange={e => upd("city_other", e.target.value)} />
+          <input className="loc-other-input" placeholder="Area / Neighbourhood (optional)…"
+            value={locState.region_other} onChange={e => upd("region_other", e.target.value)} />
+        </div>
+      )}
+
+      {/* Other toggle */}
+      <div className="loc-other-row">
+        <button
+          className={`loc-other-btn${locState.other_on ? " on" : ""}`}
+          onClick={() => upd("other_on", !locState.other_on)}
+        >
+          {locState.other_on ? "← Use dropdown" : "+ Not in the list? Type it"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   CHIP SECTION
+──────────────────────────────────────── */
 function ChipSection({ section, state, update, accent }) {
   const val = state[section.id];
   const otherOn = !!state[`${section.id}_other_on`];
@@ -556,10 +849,8 @@ function ChipSection({ section, state, update, accent }) {
       update(section.id, val === chip ? "" : chip);
     }
   };
-  const sectionDone = (() => {
-    const other = otherOn && otherText.trim();
-    return other || (section.multi ? (val || []).length > 0 : !!val);
-  })();
+  const sectionDone = otherOn && otherText.trim()
+    ? true : section.multi ? (val || []).length > 0 : !!val;
 
   return (
     <div className="field">
@@ -592,8 +883,11 @@ function ChipSection({ section, state, update, accent }) {
   );
 }
 
-function CaptionPreview({ state, accent }) {
-  const full = assembleCaption(state);
+/* ─────────────────────────────────────────
+   CAPTION PREVIEW
+──────────────────────────────────────── */
+function CaptionPreview({ state, locState, accent }) {
+  const full = assembleCaption(state, locState);
   const trigger = DATASETS[state._dataset].trigger;
   const rest = full.slice(trigger.length);
   return (
@@ -608,10 +902,13 @@ function CaptionPreview({ state, accent }) {
   );
 }
 
-function DownloadModal({ images, caps, photographerName, onClose, onDone }) {
+/* ─────────────────────────────────────────
+   DOWNLOAD MODAL
+──────────────────────────────────────── */
+function DownloadModal({ images, caps, locStates, photographerName, onClose, onDone }) {
   const [downloaded, setDownloaded] = useState(false);
   const [busy, setBusy] = useState(false);
-  const doneCount = images.filter((_, i) => isDone(caps[i])).length;
+  const doneCount = images.filter((_, i) => isDone(caps[i], locStates[i])).length;
 
   const handleDownload = async () => {
     setBusy(true);
@@ -626,16 +923,17 @@ function DownloadModal({ images, caps, photographerName, onClose, onDone }) {
       const groups = {};
       for (let i = 0; i < images.length; i++) {
         const cap = caps[i] || emptyState("street");
+        const loc = locStates[i] || emptyLocState();
         const trigger = DATASETS[cap._dataset].trigger;
         if (!groups[trigger]) groups[trigger] = [];
-        groups[trigger].push({ img: images[i], cap });
+        groups[trigger].push({ img: images[i], cap, loc });
       }
       for (const [trigger, items] of Object.entries(groups)) {
         const folder = zip.folder(`dataset/img/10_${trigger}`);
-        for (const { img, cap } of items) {
+        for (const { img, cap, loc } of items) {
           const base = img.name.replace(/\.[^.]+$/, "");
           folder.file(img.name, img.file);
-          folder.file(`${base}.txt`, assembleCaption(cap));
+          folder.file(`${base}.txt`, assembleCaption(cap, loc));
         }
       }
       zip.file("SUBMISSION_INFO.txt",
@@ -687,6 +985,9 @@ function DownloadModal({ images, caps, photographerName, onClose, onDone }) {
   );
 }
 
+/* ─────────────────────────────────────────
+   EDIT NAME MODAL
+──────────────────────────────────────── */
 function EditNameModal({ current, onSave, onClose }) {
   const [name, setName] = useState(current);
   return (
@@ -709,12 +1010,18 @@ function EditNameModal({ current, onSave, onClose }) {
   );
 }
 
+/* ─────────────────────────────────────────
+   MAIN APP
+──────────────────────────────────────── */
 export default function App() {
   const [screen, setScreen] = useState("onboard");
   const [photographerName, setPhotographerName] = useState("");
   const [photographerNote, setPhotographerNote] = useState("");
   const [images, setImages] = useState([]);
   const [caps, setCaps] = useState({});
+  const [locStates, setLocStates] = useState({});  // per-image location state
+  const [locLocked, setLocLocked] = useState(false);
+  const [lockedLocState, setLockedLocState] = useState(emptyLocState());
   const [idx, setIdx] = useState(0);
   const [drag, setDrag] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -747,6 +1054,15 @@ export default function App() {
       });
       return next;
     });
+    setLocStates(prev => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = parseInt(k);
+        if (ki < i) next[ki] = v;
+        else if (ki > i) next[ki - 1] = v;
+      });
+      return next;
+    });
     setIdx(prev => {
       if (images.length <= 1) { setScreen("upload"); return 0; }
       return Math.min(prev, images.length - 2);
@@ -756,14 +1072,46 @@ export default function App() {
 
   const state = caps[idx] || emptyState("street");
   const accent = DATASETS[state._dataset]?.color || "#e8a84c";
+  const ds = DATASETS[state._dataset];
+
+  // Location state for current image — if locked use the locked state
+  const currentLocState = locLocked ? lockedLocState : (locStates[idx] || emptyLocState());
+  const setCurrentLocState = (updater) => {
+    const newVal = typeof updater === "function" ? updater(currentLocState) : updater;
+    if (locLocked) {
+      setLockedLocState(newVal);
+      // Apply to all images
+      setLocStates(prev => {
+        const next = { ...prev };
+        images.forEach((_, i) => { next[i] = newVal; });
+        return next;
+      });
+    } else {
+      setLocStates(prev => ({ ...prev, [idx]: newVal }));
+    }
+  };
+
+  // When locking, save current image's loc state as the locked state and apply to all
+  const handleSetLocLocked = (val) => {
+    if (val) {
+      const current = locStates[idx] || emptyLocState();
+      setLockedLocState(current);
+      setLocStates(prev => {
+        const next = { ...prev };
+        images.forEach((_, i) => { next[i] = current; });
+        return next;
+      });
+    }
+    setLocLocked(val);
+  };
+
   const update = (field, val) =>
     setCaps(p => ({ ...p, [idx]: { ...(p[idx] || emptyState("street")), [field]: val } }));
   const setDataset = (dsKey) =>
     setCaps(p => ({ ...p, [idx]: emptyState(dsKey) }));
 
-  const doneCount = images.filter((_, i) => isDone(caps[i])).length;
+  const doneCount = images.filter((_, i) => isDone(caps[i], locStates[i])).length;
   const pct = images.length ? (doneCount / images.length) * 100 : 0;
-  const ds = DATASETS[state._dataset];
 
   /* ── Onboarding ── */
   if (screen === "onboard") return (
@@ -829,11 +1177,9 @@ export default function App() {
           </div>
         </div>
         {showEditName && (
-          <EditNameModal
-            current={photographerName}
+          <EditNameModal current={photographerName}
             onSave={n => { setPhotographerName(n); setShowEditName(false); }}
-            onClose={() => setShowEditName(false)}
-          />
+            onClose={() => setShowEditName(false)} />
         )}
       </div>
     </>
@@ -916,13 +1262,27 @@ export default function App() {
                   onClick={() => setDataset(key)}>{d.icon} {d.label}</button>
               ))}
             </div>
+
             <div className="form-scroll">
+              {/* Location — always first */}
+              <LocationSection
+                locState={currentLocState}
+                setLocState={setCurrentLocState}
+                locLocked={locLocked}
+                setLocLocked={handleSetLocLocked}
+                accent={accent}
+              />
+
+              <hr className="divider" />
+
+              {/* Dataset-specific sections */}
               {ds.sections.map((section, i) => (
                 <div key={section.id}>
                   <ChipSection section={section} state={state} update={update} accent={accent} />
                   {i < ds.sections.length - 1 && <hr className="divider" style={{ marginTop: 12 }} />}
                 </div>
               ))}
+
               <div className="field">
                 <label className="label">Additional details</label>
                 <textarea className="notes-input" rows={2}
@@ -930,7 +1290,8 @@ export default function App() {
                   value={state.notes || ""}
                   onChange={e => update("notes", e.target.value)} />
               </div>
-              <CaptionPreview state={state} accent={accent} />
+
+              <CaptionPreview state={state} locState={currentLocState} accent={accent} />
             </div>
           </div>
         </div>
@@ -943,7 +1304,7 @@ export default function App() {
                 onClick={() => setIdx(i)} title={img.name}>
                 <img src={img.url} alt="" />
               </button>
-              {isDone(caps[i]) && <span className="done-dot">✓</span>}
+              {isDone(caps[i], locStates[i]) && <span className="done-dot">✓</span>}
               <button className="thumb-delete" onClick={() => setDeleteTarget(i)}>✕</button>
             </div>
           ))}
@@ -953,7 +1314,8 @@ export default function App() {
 
         {showModal && (
           <DownloadModal
-            images={images} caps={caps} photographerName={photographerName}
+            images={images} caps={caps} locStates={locStates}
+            photographerName={photographerName}
             onClose={() => setShowModal(false)}
             onDone={() => { setShowModal(false); setScreen("done"); }}
           />
@@ -975,11 +1337,9 @@ export default function App() {
         )}
 
         {showEditName && (
-          <EditNameModal
-            current={photographerName}
+          <EditNameModal current={photographerName}
             onSave={n => { setPhotographerName(n); setShowEditName(false); }}
-            onClose={() => setShowEditName(false)}
-          />
+            onClose={() => setShowEditName(false)} />
         )}
       </div>
     </>
