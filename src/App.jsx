@@ -297,19 +297,27 @@ const assembleCaption = (state, locState) => {
   if (!state) return "";
   const ds = DATASETS[state._dataset];
   const parts = [ds.trigger];
+
+  // Location
   const country = locState.other_on && locState.country_other ? locState.country_other : locState.country;
   const city    = locState.other_on && locState.city_other    ? locState.city_other    : locState.city;
   const region  = locState.other_on && locState.region_other  ? locState.region_other  : locState.region;
   if (country) parts.push(country);
   if (city && city !== country) parts.push(city);
   if (region) parts.push(region);
+
+  // Gemini free caption is the PRIMARY description — comes first
+  if (state._blip?.trim()) parts.push(state._blip.trim());
+
+  // Chips are secondary enrichment — add anything selected
   ds.sections.forEach(s => {
     if (s.multi) parts.push(...(state[s.id] || []));
     else if (state[s.id]) parts.push(state[s.id]);
     if (state[`${s.id}_other_on`] && state[`${s.id}_other`]?.trim())
       parts.push(state[`${s.id}_other`].trim());
   });
-  if (state._blip?.trim()) parts.push(state._blip.trim());
+
+  // Photographer notes last
   if (state.notes?.trim()) parts.push(state.notes.trim());
   return parts.filter(Boolean).join(", ");
 };
@@ -358,7 +366,7 @@ const runGemini = async (file, apiKey, locationContext) => {
   try {
     const base64 = await fileToBase64(file);
     const locHint = locationContext ? `This photo was taken in ${locationContext}. ` : "";
-    const prompt = `${locHint}Describe this photograph in detail for AI training. Focus on: what is happening in the scene, the type of environment, architectural elements if present, people and their activities, lighting conditions, and the overall mood. Be specific and factual. Keep it under 30 words.`;
+    const prompt = `${locHint}You are helping build an AI training dataset about African urban life. Look at this photograph carefully and write a precise, specific description of exactly what you see. Describe: the main subject or activity, the environment and setting, any notable visual details like signs, materials, textures or colours, the lighting and time of day, and the overall atmosphere. Write in plain descriptive language, no more than 40 words. Do not use generic terms — be as specific as possible about what is actually in this image.`;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
@@ -1421,16 +1429,16 @@ export default function App() {
               {/* BLIP auto-caption field */}
               <div className="blip-field">
                 <label className="blip-label">
-                  Gemini Caption Suggestion
+                  AI Description — edit freely
                   {state._blip_loading
                     ? <span className="blip-loading-badge">analysing…</span>
                     : state._blip
-                      ? <span className="blip-badge">Gemini · edit freely</span>
+                      ? <span className="blip-badge">Gemini · free description · edit freely</span>
                       : null
                   }
                 </label>
-                <textarea className="blip-textarea" rows={2}
-                  placeholder="AI caption will appear here — or type your own description…"
+                <textarea className="blip-textarea" rows={3}
+                  placeholder="AI will describe exactly what it sees in your photo — you can edit or correct this…"
                   value={state._blip || ""}
                   onChange={e => update("_blip", e.target.value)}
                 />
