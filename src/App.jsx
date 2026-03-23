@@ -365,27 +365,55 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 const runGemini = async (file, apiKey, locationContext) => {
   try {
     const base64 = await fileToBase64(file);
+
+    // Ensure we have actual image data
+    if (!base64 || base64.length < 100) {
+      console.error("Image base64 too short — file may not have loaded");
+      return "";
+    }
+
+    // Force correct mime type
+    const mimeType = file.type || "image/jpeg";
     const locHint = locationContext ? `This photo was taken in ${locationContext}. ` : "";
-    const prompt = `${locHint}You are helping build an AI training dataset about African urban life. Look at this photograph carefully and write a precise, specific description of exactly what you see. Describe: the main subject or activity, the environment and setting, any notable visual details like signs, materials, textures or colours, the lighting and time of day, and the overall atmosphere. Write in plain descriptive language, no more than 40 words. Do not use generic terms — be as specific as possible about what is actually in this image.`;
+    const prompt = `${locHint}You are helping build an AI training dataset about African urban life. Look very carefully at THIS specific photograph and describe exactly what you see in it. Be specific about: the exact subject and what they are doing, the specific environment and any architectural details, any visible text or signage, the lighting quality and time of day, colours and textures, and the mood. Write 30-40 words of precise description. Every image is different — describe only what is actually in this particular photo.`;
+
+    const body = {
+      contents: [{
+        parts: [
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: base64
+            }
+          },
+          { text: prompt }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 100,
+      }
+    };
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: file.type, data: base64 } },
-              { text: prompt }
-            ]
-          }]
-        })
+        body: JSON.stringify(body)
       }
     );
-    if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Gemini API error:", res.status, err);
+      return "";
+    }
+
     const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    console.log("Gemini response for", file.name, ":", text);
+    return text || "";
   } catch (e) {
     console.error("Gemini error:", e);
     return "";
@@ -972,6 +1000,8 @@ export default function App() {
     for (let i = 0; i < imgs.length; i++) {
       setBlipCurrent(imgs[i].name);
       setBlipProgress(Math.round((i / imgs.length) * 100));
+      // Small delay to avoid Gemini rate limits
+      if (i > 0) await new Promise(r => setTimeout(r, 1000));
       const geminiText = await runGemini(imgs[i].file, apiKey, locContext);
       setCaps(prev => {
         const existing = prev[i] || emptyState("street");
