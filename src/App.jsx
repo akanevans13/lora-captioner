@@ -391,7 +391,9 @@ const runGemini = async (file, apiKey, locationContext) => {
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 500,
+        maxOutputTokens: 300,
+        stopSequences: [],
+        candidateCount: 1,
       }
     };
 
