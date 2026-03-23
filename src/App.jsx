@@ -7,7 +7,7 @@ const ACCESS_CODE = "ZAZI2025"; // PIN protected
    Photographer gets a free key from:
    https://aistudio.google.com/app/apikey
 ──────────────────────────────────────── */
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-3-flash-preview";
 
 /* ─────────────────────────────────────────
    LOCATION AUTO-FILL DEFAULTS
