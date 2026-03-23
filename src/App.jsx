@@ -375,7 +375,7 @@ const runGemini = async (file, apiKey, locationContext) => {
     // Force correct mime type
     const mimeType = file.type || "image/jpeg";
     const locHint = locationContext ? `This photo was taken in ${locationContext}. ` : "";
-    const prompt = `${locHint}You are helping build an AI training dataset about African urban life. Look very carefully at THIS specific photograph and describe exactly what you see in it. Be specific about: the exact subject and what they are doing, the specific environment and any architectural details, any visible text or signage, the lighting quality and time of day, colours and textures, and the mood. Write 30-40 words of precise description. Every image is different — describe only what is actually in this particular photo.`;
+    const prompt = `${locHint}Look at this specific photograph and describe exactly what you see. Do not use categories or labels. Write what you actually observe: what is in the foreground, what is happening, what the environment looks like, what the light is doing, what textures or colours stand out, what the mood feels like. Be specific to this exact image. Write 30 to 40 words of precise observation. Every image is different — only describe what is in front of you.`;
 
     const body = {
       contents: [{
@@ -990,7 +990,7 @@ export default function App() {
   const runGeminiAll = async (imgs, locState, apiKey) => {
     setBlipRunning(true);
     setBlipProgress(0);
-    const autoFill = getAutoFill(locState);
+
     const locContext = [
       locState.other_on ? locState.country_other : locState.country,
       locState.other_on ? locState.city_other    : locState.city,
@@ -1000,14 +1000,22 @@ export default function App() {
     for (let i = 0; i < imgs.length; i++) {
       setBlipCurrent(imgs[i].name);
       setBlipProgress(Math.round((i / imgs.length) * 100));
-      // Small delay to avoid Gemini rate limits
       if (i > 0) await new Promise(r => setTimeout(r, 1000));
+
+      // Gemini runs with NO pre-filled state — clean slate
+      // It only sees the image and the location context
       const geminiText = await runGemini(imgs[i].file, apiKey, locContext);
-      setCaps(prev => {
-        const existing = prev[i] || emptyState("street");
-        const withAutoFill = applyAutoFill(existing, autoFill);
-        return { ...prev, [i]: { ...withAutoFill, _blip: geminiText, _blip_loading: false } };
-      });
+
+      setCaps(prev => ({
+        ...prev,
+        [i]: {
+          // Start from completely empty state — no chips pre-selected
+          ...emptyState("street"),
+          // Only Gemini caption + location — photographer adds chips themselves
+          _blip: geminiText,
+          _blip_loading: false
+        }
+      }));
       setLocStates(prev => ({ ...prev, [i]: locState }));
     }
     setBlipProgress(100);
