@@ -1084,13 +1084,15 @@ export default function App() {
       // It only sees the image and the location context
       const geminiText = await runGemini(imgs[i].file, apiKey, locContext);
 
+      // Claude expands the Gemini caption
+      setBlipCurrent(`Expanding with Claude… ${imgs[i].name}`);
+      const expandedText = await expandWithClaude(geminiText, imgs[i].file, locContext);
+
       setCaps(prev => ({
         ...prev,
         [i]: {
-          // Start from completely empty state — no chips pre-selected
           ...emptyState("street"),
-          // Only Gemini caption + location — photographer adds chips themselves
-          _gemini: geminiText,
+          _gemini: expandedText || geminiText,
           _gemini_loading: false
         }
       }));
