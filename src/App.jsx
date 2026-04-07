@@ -1176,7 +1176,7 @@ export default function App() {
     }
   };
 
-  const state = caps[idx] || emptyState("street"); // street is default — photographer should select correct type
+  const state = caps[idx] || emptyState("street"); // street is default — photographer should select correct type // street is default — photographer should select correct type
   const accent = DATASETS[state._dataset]?.color || "#e8a84c";
   const ds = DATASETS[state._dataset];
   const update = (field, val) => {
