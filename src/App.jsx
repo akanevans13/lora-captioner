@@ -375,7 +375,7 @@ const runGemini = async (file, apiKey, locationContext) => {
     // Force correct mime type
     const mimeType = file.type || "image/jpeg";
     const locHint = locationContext ? `This photo was taken in ${locationContext}. ` : "";
-    const prompt = `${locHint}Describe this photograph for an AI training dataset. Write a complete, detailed description in one paragraph. Describe: what the people are doing and wearing, the specific environment and setting, the lighting quality and colours, the mood and energy of the scene, and any notable architectural or natural details visible. Focus on actions, clothing, environment and atmosphere — not race or ethnicity. Write exactly 50 words. Complete the full description without cutting off.`;
+    const prompt = `${locHint}You are generating a training caption for a Stable Diffusion XL LoRA dataset. Look at this photograph and describe it as comma-separated visual attributes in this order: subject and clothing, action or pose, setting and environment, lighting quality, mood and atmosphere, visual style and composition, any culturally specific details. Be extremely specific — not "a man" but "a middle-aged man in a collarless white shirt". Never use racial descriptors. Write 40-60 words as comma-separated phrases only, no full sentences, no preamble.`;
 
     const body = {
       contents: [{
@@ -392,8 +392,6 @@ const runGemini = async (file, apiKey, locationContext) => {
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 500,
-        stopSequences: [],
-        candidateCount: 1,
         stopSequences: [],
         candidateCount: 1,
       }

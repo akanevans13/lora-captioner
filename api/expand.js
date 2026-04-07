@@ -13,11 +13,29 @@ export default async function handler(req) {
     }
 
     const locHint = locationContext ? `This photo was taken in ${locationContext}. ` : "";
-    const prompt = `${locHint}You are helping build an AI training dataset about African urban life and culture.
+    const prompt = `You are an expert machine learning engineer creating training captions for a Stable Diffusion XL LoRA dataset about African urban life and culture.
 
-An AI has already described this photograph as: "${geminiCaption}"
+TASK: Look at this photograph carefully and generate an optimal training caption.
 
-Look at the image carefully and write a richer, more complete and culturally specific description. Expand what was described — add texture, atmosphere, cultural context, and specific visual details that help an AI model learn to generate images like this. Focus on: what people are wearing and doing, body language, the specific environment, lighting quality, colours, cultural elements, and the emotional energy. Do not use racial descriptors. Write a complete 60 to 80 word paragraph. Do not cut off mid-sentence.`;
+CAPTION STRUCTURE — write in this exact order, comma separated:
+1. SUBJECT: Who or what is the main focus — describe clothing details, accessories, hairstyle, expression, pose, age range
+2. ACTION: What is happening — be specific about movement, gesture, activity
+3. SETTING: The exact environment — interior/exterior, architectural style, urban/rural, specific location type
+4. LIGHTING: Quality and direction of light — golden hour, harsh midday, diffused overcast, artificial warm, backlit
+5. ATMOSPHERE: The mood and energy — intimate, chaotic, joyful, solemn, bustling, quiet
+6. VISUAL STYLE: Camera perspective, depth of field, colour palette, texture — close-up portrait, wide establishing shot, shallow depth of field, warm tones, high contrast
+7. CULTURAL SPECIFICS: Any culturally specific elements visible — traditional patterns, local signage, specific materials, regional architecture
+
+RULES:
+- Be extremely specific — not "a man" but "a middle-aged man in a collarless white cotton shirt"
+- Not "buildings" but "low-rise painted concrete shopfronts with corrugated iron awnings"
+- Never use racial descriptors — describe clothing, texture, light on skin instead
+- For portraits: focus on expression, clothing, accessories, lighting on face, background environment
+- Write as comma-separated phrases, not full sentences
+- Aim for 40-60 words total
+- Every word must be visually reproducible by an AI image generator
+
+OUTPUT FORMAT: Write only the caption — no preamble, no explanation, just the descriptive phrases.``;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
