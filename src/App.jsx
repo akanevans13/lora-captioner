@@ -1091,13 +1091,9 @@ export default function App() {
       setBlipProgress(Math.round((i / imgs.length) * 100));
       if (i > 0) await new Promise(r => setTimeout(r, 2000));
 
-      // Gemini runs with NO pre-filled state — clean slate
-      // It only sees the image and the location context
-      const geminiText = await runGemini(imgs[i].file, apiKey, locContext);
-
-      // Claude expands the Gemini caption
-      setBlipCurrent(`Expanding with Claude… ${imgs[i].name}`);
-      const expandedText = await expandWithClaude(geminiText, imgs[i].file, locContext);
+      // Claude only — direct vision captioning, no Gemini needed
+      setBlipCurrent(`Claude is analysing… ${imgs[i].name}`);
+      const expandedText = await expandWithClaude("", imgs[i].file, locContext);
 
       setCaps(prev => ({
         ...prev,
@@ -1439,7 +1435,7 @@ export default function App() {
                   setScreen("caption");
                 }
               }}>
-              {geminiKey.trim() ? `Auto-caption ${images.length} images with AI →` : `Continue without AI →`}
+              `Auto-caption ${images.length} images with Claude AI →`
             </button>
             <button className="loc-skip-btn" onClick={() => {
               const next = {};
@@ -1625,11 +1621,9 @@ export default function App() {
                     currentLocState.other_on ? currentLocState.city_other    : currentLocState.city,
                     currentLocState.other_on ? currentLocState.region_other  : currentLocState.region,
                   ].filter(Boolean).join(", ");
-                  // Step 1 — Gemini
-                  const geminiText = await runGemini(images[idx].file, geminiKey, locContext);
-                  // Step 2 — Claude expands
-                  const expandedText = await expandWithClaude(geminiText, images[idx].file, locContext);
-                  update("_gemini", expandedText || geminiText);
+                  // Claude only — no Gemini needed
+                  const caption = await expandWithClaude("", images[idx].file, locContext);
+                  update("_gemini", caption);
                   update("_gemini_loading", false);
                 }}>↻ Re-run AI</button>
               </div>
