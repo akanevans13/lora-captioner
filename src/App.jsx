@@ -1517,7 +1517,12 @@ export default function App() {
           {/* Image panel */}
           <div className="img-panel">
             <div className="img-wrap">
-              <img src={images[idx].url} alt={images[idx].name} className="main-img" style={{ transform: `rotate(${rotations[idx] || 0}deg)`, transition: "transform .2s" }} />
+              <img src={images[idx].url} alt={images[idx].name} className="main-img" style={{
+              transform: `rotate(${rotations[idx] || 0}deg)`,
+              transition: "transform .2s",
+              maxWidth: (rotations[idx] || 0) % 180 !== 0 ? "60%" : "100%",
+              maxHeight: (rotations[idx] || 0) % 180 !== 0 ? "60%" : "100%",
+            }} />
             </div>
             <div className="img-footer">
               <span className="img-name">{images[idx].name}</span>
