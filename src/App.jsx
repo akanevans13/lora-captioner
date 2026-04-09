@@ -869,7 +869,7 @@ function CaptionPreview({ state, locState, accent }) {
 /* ─────────────────────────────────────────
    DOWNLOAD MODAL
 ──────────────────────────────────────── */
-function DownloadModal({ images, caps, locStates, photographerName, onClose, onDone }) {
+function DownloadModal({ images, caps, locStates, rotations = {}, photographerName, onClose, onDone }) {
   const [downloaded, setDownloaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const doneCount = images.filter((_, i) => isDone(caps[i], locStates[i])).length;
@@ -891,13 +891,36 @@ function DownloadModal({ images, caps, locStates, photographerName, onClose, onD
         const loc = locStates[i] || emptyLocState();
         const trigger = DATASETS[cap._dataset].trigger;
         if (!groups[trigger]) groups[trigger] = [];
-        groups[trigger].push({ img: images[i], cap, loc });
+        groups[trigger].push({ img: images[i], cap, loc, rotation: rotations[i] || 0 });
       }
       for (const [trigger, items] of Object.entries(groups)) {
         const folder = zip.folder(`dataset/img/10_${trigger}`);
-        for (const { img, cap, loc } of items) {
+        for (const { img, cap, loc, rotation } of items) {
           const base = img.name.replace(/\.[^.]+$/, "");
-          folder.file(img.name, img.file);
+
+          // Apply rotation to image if needed
+          if (rotation && rotation !== 0) {
+            const rotatedBlob = await new Promise((resolve) => {
+              const image = new Image();
+              const url = URL.createObjectURL(img.file);
+              image.onload = () => {
+                const isOdd = rotation % 180 !== 0;
+                const canvas = document.createElement("canvas");
+                canvas.width = isOdd ? image.height : image.width;
+                canvas.height = isOdd ? image.width : image.height;
+                const ctx = canvas.getContext("2d");
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((rotation * Math.PI) / 180);
+                ctx.drawImage(image, -image.width / 2, -image.height / 2);
+                URL.revokeObjectURL(url);
+                canvas.toBlob(resolve, "image/jpeg", 0.92);
+              };
+              image.src = url;
+            });
+            folder.file(base + ".jpg", rotatedBlob);
+          } else {
+            folder.file(img.name, img.file);
+          }
           folder.file(`${base}.txt`, assembleCaption(cap, loc));
         }
       }
@@ -1650,6 +1673,7 @@ export default function App() {
 
         {showModal && (
           <DownloadModal images={images} caps={caps} locStates={locStates}
+            rotations={rotations}
             photographerName={photographerName}
             onClose={() => setShowModal(false)}
             onDone={() => { setShowModal(false); setScreen("done"); }} />
