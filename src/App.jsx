@@ -705,6 +705,12 @@ const CSS = `
   .save-badge { font-size: 10px; color: #5aaa7a; padding: 3px 8px; border: 1px solid rgba(90,170,122,.3); border-radius: 20px; background: rgba(90,170,122,.08); white-space: nowrap; }
   .save-badge.saving { color: #e8a84c; border-color: rgba(232,168,76,.3); background: rgba(232,168,76,.08); }
 
+  .rotate-btn {
+    padding: 4px 9px; background: #131110; border: 1px solid #1e1c1a;
+    color: #504840; border-radius: 4px; font-family: 'Syne', sans-serif;
+    font-size: 11px; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .rotate-btn:hover { border-color: #e8a84c; color: #e8a84c; }
   .new-batch-btn {
     padding: 5px 12px; background: transparent; border: 1px solid #2a2825;
     color: #504840; border-radius: 5px; font-family: 'Syne', sans-serif;
@@ -988,6 +994,7 @@ export default function App() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showEditName, setShowEditName] = useState(false);
   const [selected, setSelected] = useState(new Set()); // batch selection
+  const [rotations, setRotations] = useState({});
   const [blipRunning, setBlipRunning] = useState(false);
   const [blipProgress, setBlipProgress] = useState(0);
   const [blipCurrent, setBlipCurrent] = useState("");
@@ -1027,6 +1034,10 @@ export default function App() {
   const folderRef = useRef();
   const addMoreRef = useRef();
   const addMoreFolderRef = useRef();
+
+  const rotateImage = (i) => {
+    setRotations(prev => ({ ...prev, [i]: ((prev[i] || 0) + 90) % 360 }));
+  };
 
   /* ── Add files ── */
   const addFiles = useCallback(files => {
@@ -1460,6 +1471,7 @@ export default function App() {
                 setCaps({});
                 setLocStates({});
                 setSelected(new Set());
+                setRotations({});
                 setIdx(0);
                 setLocLocked(false);
                 setScreen("upload");
@@ -1505,12 +1517,13 @@ export default function App() {
           {/* Image panel */}
           <div className="img-panel">
             <div className="img-wrap">
-              <img src={images[idx].url} alt={images[idx].name} className="main-img" />
+              <img src={images[idx].url} alt={images[idx].name} className="main-img" style={{ transform: `rotate(${rotations[idx] || 0}deg)`, transition: "transform .2s" }} />
             </div>
             <div className="img-footer">
               <span className="img-name">{images[idx].name}</span>
               <div className="img-actions">
                 <button className="copy-prev-btn" disabled={idx === 0} onClick={copyFromPrev} title="Copy caption from previous image">↑ Copy prev</button>
+                <button className="rotate-btn" onClick={() => rotateImage(idx)}>↻ Rotate</button>
                 <button className="delete-btn" onClick={() => setDeleteTarget(idx)}>✕ Remove</button>
                 <div className="img-nav">
                   <button className="nav-btn" onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}>← Prev</button>
@@ -1613,7 +1626,7 @@ export default function App() {
                 onContextMenu={e => { e.preventDefault(); toggleSelect(i, e); }}
                 title={`${img.name} — Ctrl/Cmd+click to select`}
               >
-                <img src={img.url} alt="" />
+                <img src={img.url} alt="" style={{ transform: `rotate(${rotations[i] || 0}deg)` }} />
                 {(caps[i]?._gemini_loading) && <div className="thumb-loading">…</div>}
               </button>
               {isDone(caps[i], locStates[i]) && (
